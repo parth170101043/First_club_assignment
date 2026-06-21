@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Shop · FirstClub</title>
+    <style>
+        :root{--ink:#18221b;--muted:#667069;--canvas:#f4f1e8;--green:#174f3b;--gold:#d9a441;--line:#dedbd1;--surface:#fff}
+        *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top right,#eadab6 0,transparent 28rem),var(--canvas);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+        .page{width:min(1180px,calc(100% - 32px));margin:auto;padding:28px 0 70px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:48px}.brand{font-weight:900;letter-spacing:.1em;text-transform:uppercase}.top a{color:var(--green);font-weight:800;text-decoration:none}
+        h1{font:500 clamp(3rem,7vw,5.8rem)/.98 Georgia,serif;letter-spacing:-.05em;margin:0}.intro{max-width:650px;color:var(--muted);line-height:1.7;font-size:1.05rem;margin:18px 0 38px}
+        .flash{padding:13px 16px;border-radius:11px;background:#e2f1e8;color:var(--green);font-weight:700;margin-bottom:20px}.flash.error{background:#fde8e6;color:#9b3028}
+        .layout{display:grid;grid-template-columns:1fr 350px;gap:28px;align-items:start}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:17px}
+        .card{display:flex;flex-direction:column;min-height:270px;padding:24px;background:var(--surface);border:1px solid var(--line);border-radius:18px}.category{color:var(--green);font-size:.74rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.card h2{font:500 1.8rem Georgia,serif;margin:8px 0}.desc{color:var(--muted);line-height:1.55}.price{margin-top:auto;padding-top:22px;font:500 1.8rem Georgia,serif}
+        .add{display:flex;gap:9px;margin-top:14px}.add input{width:68px;padding:10px;border:1px solid #c8cdc8;border-radius:9px}.add button,.checkout{border:0;border-radius:999px;background:var(--green);color:#fff;font-weight:900;padding:11px 17px;cursor:pointer}
+        .cart{position:sticky;top:22px;padding:24px;background:var(--green);color:#fff;border-radius:21px;box-shadow:0 20px 45px #174f3b24}.cart h2{font:500 2rem Georgia,serif;margin:0 0 18px}.cart-line{padding:15px 0;border-top:1px solid #ffffff24}.line-head{display:flex;justify-content:space-between;gap:14px}.cart small{color:#bfd4c9}.update{display:flex;gap:8px;margin-top:9px}.update input{width:62px;padding:8px;border:0;border-radius:8px}.update button{border:0;border-radius:999px;background:#ffffff1d;color:#fff;padding:8px 12px;cursor:pointer}.total{display:flex;justify-content:space-between;font-size:1.16rem;font-weight:900;padding:20px 0;border-top:1px solid #ffffff24}.checkout{width:100%;background:#fff;color:var(--green)}.empty{color:#bfd4c9;line-height:1.5}
+        @media(max-width:850px){.layout{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.cart{position:static}}
+    </style>
+</head>
+<body>
+<main class="page">
+    <header class="top"><div class="brand">FirstClub</div><a th:href="@{/home}">Membership home</a></header>
+    <h1>Good things, chosen simply.</h1>
+    <p class="intro">Add products to your cart and place one order. Your strongest eligible membership discount is calculated automatically at checkout.</p>
+    <div class="flash" th:if="${orderSuccess}" th:text="${orderSuccess}"></div>
+    <div class="flash error" th:if="${orderError}" th:text="${orderError}"></div>
+
+    <div class="layout">
+        <section class="grid">
+            <article class="card" th:each="product : ${products}">
+                <div class="category" th:text="${product.category != null ? product.category : 'FirstClub pick'}"></div>
+                <h2 th:text="${product.name}">Coffee hamper</h2>
+                <p class="desc" th:text="${product.description != null ? product.description : 'Available to order now.'}"></p>
+                <div class="price" th:text="${'₹' + product.price}">₹500</div>
+                <form class="add" th:action="@{/cart/add}" method="post">
+                    <input type="hidden" name="productId" th:value="${product.id}">
+                    <input type="number" name="quantity" min="1" value="1" aria-label="Quantity">
+                    <button type="submit">Add to cart</button>
+                </form>
+            </article>
+            <p class="empty" th:if="${products.isEmpty()}">No products have been added yet.</p>
+        </section>
+
+        <aside class="cart" id="cart">
+            <h2>Your cart</h2>
+            <p class="empty" th:if="${cartLines.isEmpty()}">Your cart is waiting for something good.</p>
+            <div class="cart-line" th:each="line : ${cartLines}">
+                <div class="line-head"><strong th:text="${line.product.name}"></strong><strong th:text="${'₹' + line.lineTotal}"></strong></div>
+                <small th:text="${'₹' + line.product.price + ' each'}"></small>
+                <form class="update" th:action="@{/cart/update}" method="post">
+                    <input type="hidden" name="productId" th:value="${line.product.id}">
+                    <input type="number" name="quantity" min="0" th:value="${line.quantity}" aria-label="Quantity">
+                    <button type="submit">Update</button>
+                </form>
+            </div>
+            <div class="total" th:if="${!cartLines.isEmpty()}"><span>Subtotal</span><span th:text="${'₹' + cartTotal}"></span></div>
+            <form th:if="${!cartLines.isEmpty()}" th:action="@{/cart/checkout}" method="post">
+                <button class="checkout" type="submit">Place order</button>
+            </form>
+        </aside>
+    </div>
+</main>
+</body>
+</html>

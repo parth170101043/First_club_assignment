@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Membership checkout · FirstClub</title>
+    <style>
+        :root{--ink:#18221b;--muted:#667069;--canvas:#f4f1e8;--green:#174f3b;--gold:#d9a441;--line:#dedbd1}
+        *{box-sizing:border-box}body{margin:0;background:var(--canvas);color:var(--ink);font-family:Inter,system-ui,sans-serif}.page{width:min(960px,calc(100% - 32px));margin:auto;padding:30px 0 70px}
+        .top{display:flex;justify-content:space-between;margin-bottom:54px}.brand{font-weight:900;letter-spacing:.09em;text-transform:uppercase}.top a{color:var(--green);font-weight:800;text-decoration:none}
+        .layout{display:grid;grid-template-columns:1fr 360px;gap:42px;align-items:start}h1{font:500 clamp(2.7rem,6vw,4.8rem)/1 Georgia,serif;letter-spacing:-.045em;margin:0 0 14px}.intro{color:var(--muted);line-height:1.65;margin-bottom:30px}
+        label{display:block;font-weight:800;margin:17px 0 7px}input{width:100%;padding:14px;border:1px solid #c5cbc6;border-radius:11px;font:inherit;background:#fff}.row{display:grid;grid-template-columns:1fr 120px;gap:14px}
+        button{width:100%;margin-top:26px;padding:14px;border:0;border-radius:999px;background:var(--green);color:#fff;font-weight:900;font-size:1rem;cursor:pointer}.error{display:block;color:#a42e24;font-size:.84rem;margin-top:5px}.alert{padding:12px;border-radius:10px;background:#fde9e7;color:#8c2920}
+        .summary{padding:28px;background:var(--green);color:#fff;border-radius:22px;box-shadow:0 20px 48px #174f3b26}.code{color:var(--gold);font-size:.76rem;font-weight:900;letter-spacing:.13em}.summary h2{font:500 2.5rem Georgia,serif;margin:7px 0 26px}.line{display:flex;justify-content:space-between;padding:14px 0;border-top:1px solid #ffffff25}.line span{color:#bfd4c9}.total{font-size:1.2rem;font-weight:900}.fine{color:#bfd4c9;font-size:.82rem;line-height:1.5;margin:22px 0 0}
+        @media(max-width:760px){.layout{grid-template-columns:1fr}.summary{grid-row:1}.row{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+<main class="page">
+    <header class="top"><div class="brand">FirstClub</div><a th:href="@{/memberships}">Change selection</a></header>
+    <div class="layout">
+        <section>
+            <h1 th:text="${upgradeMode ? 'Upgrade your membership.' : 'Complete your membership.'}">Complete your membership.</h1>
+            <p class="intro" th:text="${upgradeMode ? 'Your higher tier activates immediately and keeps the current expiry date. Enter display-only card details for the prorated upgrade charge.' : 'This project uses a mock payment processor. Enter display-only card details—no real card number or money is used.'}"></p>
+            <p class="alert" th:if="${purchaseError}" th:text="${purchaseError}"></p>
+            <form th:action="@{/membership/checkout}" th:object="${checkoutForm}" method="post">
+                <input type="hidden" th:field="*{tierId}">
+                <input type="hidden" th:field="*{billingCycle}">
+                <label for="cardholderName">Name on card</label>
+                <input id="cardholderName" th:field="*{cardholderName}" autocomplete="cc-name" placeholder="Member name">
+                <span class="error" th:errors="*{cardholderName}"></span>
+                <div class="row">
+                    <div><label for="brand">Card brand</label><input id="brand" th:field="*{brand}" placeholder="Visa"></div>
+                    <div><label for="lastFour">Last 4</label><input id="lastFour" th:field="*{lastFour}" maxlength="4" placeholder="4242"></div>
+                </div>
+                <span class="error" th:errors="*{brand}"></span><span class="error" th:errors="*{lastFour}"></span>
+                <button type="submit" th:text="${upgradeMode ? 'Pay and upgrade now' : 'Pay securely and activate'}">Pay securely and activate</button>
+            </form>
+        </section>
+        <aside class="summary">
+            <div class="code" th:text="${option.tierCode}">GOLD</div>
+            <h2 th:text="${option.tierName}">Gold</h2>
+            <div class="line"><span>Billing</span><strong th:text="${option.billingCycle}">MONTHLY</strong></div>
+            <div class="line"><span>Duration</span><strong th:text="${option.durationMonths + (option.durationMonths == 1 ? ' month' : ' months')}">1 month</strong></div>
+            <div class="line" th:if="${upgradeMode}"><span>Current full price</span><strong th:text="${'₹' + upgradeQuote.currentFullPrice}">₹0</strong></div>
+            <div class="line" th:if="${upgradeMode}"><span>New full price</span><strong th:text="${'₹' + upgradeQuote.newFullPrice}">₹0</strong></div>
+            <div class="line total"><span th:text="${upgradeMode ? 'Due today' : 'Total'}">Total</span><strong th:text="${'₹' + (upgradeMode ? upgradeQuote.chargeAmount : option.price)}">₹299</strong></div>
+            <p class="fine" th:if="${!upgradeMode}">Your subscription starts today. Renewal uses this mock payment method at the current configured plan price.</p>
+            <p class="fine" th:if="${upgradeMode}">Only the remaining-period price difference is charged. Your expiry date does not change; future renewal uses the new tier's full configured price.</p>
+        </aside>
+    </div>
+</main>
+</body>
+</html>

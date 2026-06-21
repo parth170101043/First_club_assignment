@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<!-- Renders the FirstClub member homepage with subscription, upgrade, and perk information. -->
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FirstClub Membership</title>
+    <style>
+        :root {
+            --ink: #18221b;
+            --muted: #667069;
+            --surface: #ffffff;
+            --canvas: #f4f1e8;
+            --green: #174f3b;
+            --green-soft: #dfece5;
+            --gold: #d9a441;
+            --line: #dedbd1;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top right, #e7d9b6 0, transparent 28rem),
+                var(--canvas);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+                "Segoe UI", sans-serif;
+        }
+
+        .page {
+            width: min(1120px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 28px 0 56px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 54px;
+        }
+
+        .brand {
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .member-label {
+            color: var(--muted);
+            font-size: .9rem;
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 340px;
+            gap: 40px;
+            align-items: start;
+        }
+
+        .eyebrow {
+            margin: 0 0 12px;
+            color: var(--green);
+            font-size: .78rem;
+            font-weight: 800;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            max-width: 680px;
+            margin: 0;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: clamp(3rem, 7vw, 6rem);
+            font-weight: 500;
+            line-height: .96;
+            letter-spacing: -.055em;
+        }
+
+        .intro {
+            max-width: 560px;
+            margin: 24px 0 0;
+            color: var(--muted);
+            font-size: 1.08rem;
+            line-height: 1.7;
+        }
+
+        .subscription-card {
+            padding: 26px;
+            color: #fff;
+            background: var(--green);
+            border-radius: 22px;
+            box-shadow: 0 20px 50px rgba(23, 79, 59, .2);
+        }
+
+        .subscription-card .label {
+            margin: 0 0 22px;
+            color: #bcd4c8;
+            font-size: .72rem;
+            font-weight: 800;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+        }
+
+        .tier-name {
+            margin: 0;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 2.5rem;
+            font-weight: 500;
+        }
+
+        .tier-code {
+            color: var(--gold);
+            font-size: .8rem;
+            font-weight: 800;
+            letter-spacing: .12em;
+        }
+
+        .details {
+            display: grid;
+            gap: 12px;
+            margin: 26px 0;
+            padding: 20px 0;
+            border-top: 1px solid rgba(255,255,255,.16);
+            border-bottom: 1px solid rgba(255,255,255,.16);
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            font-size: .9rem;
+        }
+
+        .detail-row span:first-child {
+            color: #bcd4c8;
+        }
+
+        .button {
+            display: block;
+            width: 100%;
+            padding: 13px 18px;
+            color: var(--green);
+            background: #fff;
+            border-radius: 999px;
+            font-weight: 800;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .highest-tier {
+            margin: 0;
+            color: #dce9e2;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        .cancellation {
+            margin: 14px 0 0;
+            color: #ffd9b5;
+            font-size: .82rem;
+            line-height: 1.45;
+        }
+
+        .membership-actions {
+            display: grid;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .membership-actions form {
+            display: flex;
+            gap: 8px;
+        }
+
+        .membership-actions select {
+            min-width: 0;
+            flex: 1;
+            padding: 10px;
+            border: 0;
+            border-radius: 999px;
+            font: inherit;
+        }
+
+        .membership-actions button {
+            padding: 10px 14px;
+            border: 0;
+            border-radius: 999px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .renewal-state {
+            margin: 0 0 18px;
+            color: #d7e5de;
+            font-size: .9rem;
+            line-height: 1.5;
+        }
+
+        .flash {
+            padding: 13px 16px;
+            margin-bottom: 24px;
+            color: var(--green);
+            background: #e2f1e8;
+            border-radius: 11px;
+            font-weight: 700;
+        }
+
+        .flash.error {
+            color: #9b3028;
+            background: #fde8e6;
+        }
+
+        .perks-section {
+            margin-top: 72px;
+        }
+
+        .section-heading {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        h2 {
+            margin: 0;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 2.2rem;
+            font-weight: 500;
+        }
+
+        .perk-count {
+            color: var(--muted);
+        }
+
+        .perks-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .perk-card {
+            min-height: 190px;
+            padding: 24px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+        }
+
+        .perk-icon {
+            display: grid;
+            width: 40px;
+            height: 40px;
+            margin-bottom: 28px;
+            place-items: center;
+            color: var(--green);
+            background: var(--green-soft);
+            border-radius: 50%;
+            font-weight: 900;
+        }
+
+        .perk-card h3 {
+            margin: 0 0 9px;
+            font-size: 1.04rem;
+        }
+
+        .perk-card p {
+            margin: 0;
+            color: var(--muted);
+            font-size: .92rem;
+            line-height: 1.55;
+        }
+
+        .empty-perks {
+            padding: 28px;
+            color: var(--muted);
+            background: var(--surface);
+            border: 1px dashed var(--line);
+            border-radius: 18px;
+        }
+
+        @media (max-width: 800px) {
+            .hero {
+                grid-template-columns: 1fr;
+            }
+
+            .subscription-card {
+                width: 100%;
+            }
+
+            .perks-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .topbar {
+                margin-bottom: 34px;
+            }
+        }
+    </style>
+</head>
+<body>
+<main class="page">
+    <header class="topbar">
+        <div class="brand">FirstClub</div>
+        <div style="display:flex;gap:20px;align-items:center">
+            <a href="/shop" style="color:var(--green);font-weight:800;text-decoration:none">Shop</a>
+            <form th:action="@{/logout}" method="post">
+                <button class="member-label" type="submit"
+                        style="border:0;background:transparent;cursor:pointer">Sign out</button>
+            </form>
+        </div>
+    </header>
+
+    <div class="flash" th:if="${success}" th:text="${success}"></div>
+    <div class="flash error" th:if="${error}" th:text="${error}"></div>
+
+    <section class="hero">
+        <div>
+            <p class="eyebrow">Your membership</p>
+            <h1>Welcome to FirstClub, <span th:text="${home.firstName}">Member</span>.</h1>
+            <p class="intro">
+                Everything included with your membership, gathered in one place.
+                Your current benefits are ready whenever you shop.
+            </p>
+        </div>
+
+        <aside class="subscription-card">
+            <p class="label">Subscription</p>
+            <div class="tier-code" th:text="${home.tierCode}">GOLD</div>
+            <h2 class="tier-name" th:text="${home.tierName}">Gold</h2>
+
+            <div class="details">
+                <div class="detail-row">
+                    <span>Billing</span>
+                    <strong th:text="${home.billingCycle}">MONTHLY</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Expires</span>
+                    <strong th:text="${home.expiryDate}">2026-07-21</strong>
+                </div>
+            </div>
+
+            <p class="renewal-state" th:if="${home.cancellationScheduled}">
+                Subscription expires on
+                <strong th:text="${home.expiryDate}">21 Jul 2026</strong>.
+            </p>
+            <p class="renewal-state"
+               th:if="${!home.cancellationScheduled and home.scheduledDowngradeTierName != null}">
+                Subscription auto-renews to
+                <strong th:text="${home.scheduledDowngradeTierName}">Silver</strong>
+                on <strong th:text="${home.expiryDate}">21 Jul 2026</strong>.
+            </p>
+            <p class="renewal-state"
+               th:if="${!home.cancellationScheduled and home.scheduledDowngradeTierName == null}">
+                Subscription auto-renews on
+                <strong th:text="${home.expiryDate}">21 Jul 2026</strong>.
+            </p>
+
+            <a class="button" th:if="${home.upgradeAvailable}" href="/memberships">
+                Upgrade membership
+            </a>
+            <p class="highest-tier" th:unless="${home.upgradeAvailable}">
+                You already have our highest membership tier.
+            </p>
+            <div class="membership-actions">
+                <form th:if="${!home.cancellationScheduled and !home.downgradeOptions.isEmpty()}"
+                      th:action="@{/membership/downgrade}" method="post">
+                    <select name="tierId" aria-label="Downgrade tier">
+                        <option th:each="option : ${home.downgradeOptions}"
+                                th:value="${option.tierId}"
+                                th:text="${'Downgrade to ' + option.tierName}">
+                            Downgrade to Silver
+                        </option>
+                    </select>
+                    <button type="submit">Schedule</button>
+                </form>
+
+                <form th:if="${!home.cancellationScheduled}"
+                      th:action="@{/membership/cancel}" method="post">
+                    <button type="submit"
+                            style="width:100%;background:#fff0ef;color:#9b3028">
+                        Cancel membership
+                    </button>
+                </form>
+
+                <form th:if="${home.cancellationScheduled}"
+                      th:action="@{/membership/reactivate}" method="post">
+                    <button type="submit"
+                            style="width:100%;background:#fff;color:var(--green)">
+                        Keep membership and auto-renew
+                    </button>
+                </form>
+            </div>
+        </aside>
+    </section>
+
+    <section style="margin-top:48px">
+        <a class="button" href="/shop"
+           style="max-width:280px;background:var(--green);color:#fff">
+            Browse products
+        </a>
+    </section>
+
+    <section class="perks-section">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Included for you</p>
+                <h2>Your membership perks</h2>
+            </div>
+            <div class="perk-count">
+                <span th:text="${home.perks.size()}">0</span> active perks
+            </div>
+        </div>
+
+        <div class="perks-grid" th:if="${!home.perks.isEmpty()}">
+            <article class="perk-card" th:each="perk : ${home.perks}">
+                <div class="perk-icon">+</div>
+                <h3 th:text="${perk.perkName}">Free delivery</h3>
+                <p th:text="${perk.description != null ? perk.description : 'Available with your membership.'}">
+                    Available with your membership.
+                </p>
+            </article>
+        </div>
+
+        <div class="empty-perks" th:if="${home.perks.isEmpty()}">
+            No perks have been assigned to this membership tier yet.
+        </div>
+    </section>
+</main>
+</body>
+</html>

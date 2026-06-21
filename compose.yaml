@@ -1,0 +1,21 @@
+# Runs the PostgreSQL server required by the FirstClub application for local development.
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: firstclub-postgres
+    environment:
+      POSTGRES_DB: firstclub
+      POSTGRES_USER: firstclub
+      POSTGRES_PASSWORD: firstclub
+    ports:
+      - "5432:5432"
+    volumes:
+      - firstclub-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U firstclub -d firstclub"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  firstclub-postgres-data:

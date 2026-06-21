@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Choose membership · FirstClub</title>
+    <style>
+        :root{--ink:#18221b;--muted:#667069;--canvas:#f4f1e8;--green:#174f3b;--gold:#d9a441;--line:#dedbd1;--surface:#fff}
+        *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top right,#eadab6 0,transparent 30rem),var(--canvas);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+        .page{width:min(1180px,calc(100% - 32px));margin:auto;padding:28px 0 70px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:52px}
+        .brand{font-weight:900;letter-spacing:.09em;text-transform:uppercase}.top a{color:var(--green);font-weight:800;text-decoration:none}
+        .eyebrow{color:var(--green);font-size:.78rem;font-weight:900;letter-spacing:.14em;text-transform:uppercase;margin:0 0 12px}
+        h1{font:500 clamp(3rem,7vw,6rem)/.96 Georgia,serif;letter-spacing:-.055em;margin:0;max-width:800px}.intro{color:var(--muted);font-size:1.08rem;line-height:1.7;max-width:650px;margin:24px 0 44px}
+        .cycle{margin-top:44px}.cycle-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}.cycle h2{font:500 2rem Georgia,serif;margin:0}.cycle-note{color:var(--muted)}
+        .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.card{position:relative;padding:26px;background:var(--surface);border:1px solid var(--line);border-radius:20px;display:flex;flex-direction:column;min-height:300px}
+        .card.featured{background:var(--green);color:#fff;border-color:var(--green);box-shadow:0 20px 48px #174f3b26}.badge{position:absolute;right:20px;top:20px;padding:6px 10px;border-radius:999px;background:#e8d29d;color:#63470c;font-size:.7rem;font-weight:900;text-transform:uppercase}
+        .tier-code{color:var(--gold);font-weight:900;letter-spacing:.12em;font-size:.75rem}.card h3{font:500 2.3rem Georgia,serif;margin:7px 0 8px}.desc{color:var(--muted);line-height:1.55}.featured .desc{color:#c8dbd1}
+        .price{margin-top:auto;padding-top:28px;font:500 2.25rem Georgia,serif}.price small{font:600 .85rem Inter,sans-serif;color:var(--muted)}.featured .price small{color:#c8dbd1}
+        .choose{display:block;margin-top:18px;padding:13px 18px;border-radius:999px;background:var(--green);color:#fff;text-align:center;text-decoration:none;font-weight:900}.featured .choose{background:#fff;color:var(--green)}
+        @media(max-width:850px){.grid{grid-template-columns:1fr}.card{min-height:250px}.cycle-head{align-items:start;flex-direction:column;gap:8px}}
+    </style>
+</head>
+<body>
+<main class="page">
+    <header class="top"><div class="brand">FirstClub</div><a th:href="@{/home}">Back to account</a></header>
+    <p class="eyebrow" th:text="${upgradeMode ? 'Membership upgrade' : 'Memberships'}">Memberships</p>
+    <h1 th:text="${upgradeMode ? 'Choose your next level.' : 'Choose how you want to belong.'}">Choose how you want to belong.</h1>
+    <p class="intro" th:if="${!upgradeMode}">Pick a tier and billing period. Your membership activates immediately after the mock checkout, and every perk follows your current effective tier.</p>
+    <p class="intro" th:if="${upgradeMode}">
+        Your current membership remains active until its existing expiry. You will pay only the prorated difference from today, and the higher-tier perks activate immediately.
+    </p>
+    <p class="intro" th:if="${upgradeMode and options.isEmpty()}">You already have the highest paid membership tier available.</p>
+
+    <section class="cycle" th:each="cycle : ${cycles}">
+        <div class="cycle-head">
+            <h2 th:text="${cycle == T(com.example.FirstClubApp.subscription.BillingCycle).MONTHLY ? 'Monthly' : cycle == T(com.example.FirstClubApp.subscription.BillingCycle).QUARTERLY ? 'Quarterly' : 'Yearly'}">Monthly</h2>
+            <span class="cycle-note" th:text="${cycle == T(com.example.FirstClubApp.subscription.BillingCycle).MONTHLY ? 'Flexible, billed every month' : cycle == T(com.example.FirstClubApp.subscription.BillingCycle).QUARTERLY ? 'Three months of uninterrupted benefits' : 'Best long-term value'}"></span>
+        </div>
+        <div class="grid">
+            <article class="card" th:each="option : ${options}" th:if="${option.billingCycle == cycle}" th:classappend="${option.tierCode == 'GOLD'} ? ' featured'">
+                <span class="badge" th:if="${option.tierCode == 'GOLD'}">Most popular</span>
+                <div class="tier-code" th:text="${option.tierCode}">GOLD</div>
+                <h3 th:text="${option.tierName}">Gold</h3>
+                <p class="desc" th:text="${option.tierCode == 'SILVER' ? 'The essentials, with member pricing and core benefits.' : option.tierCode == 'GOLD' ? 'A balanced membership with stronger everyday benefits.' : 'Our highest tier for maximum access and premium perks.'}"></p>
+                <div class="price"><span th:text="${'₹' + option.price}">₹299</span> <small th:text="${'for ' + option.durationMonths + (option.durationMonths == 1 ? ' month' : ' months')}"></small></div>
+                <a class="choose" th:href="@{/membership/checkout(tierId=${option.tierId},billingCycle=${option.billingCycle})}">
+                    <span th:text="${upgradeMode ? 'Upgrade to ' : 'Choose '}">Choose </span><span th:text="${option.tierName}">Gold</span>
+                </a>
+            </article>
+        </div>
+    </section>
+</main>
+</body>
+</html>

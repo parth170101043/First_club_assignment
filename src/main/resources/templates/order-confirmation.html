@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Order confirmed · FirstClub</title>
+    <style>
+        :root{--ink:#18221b;--muted:#667069;--canvas:#f4f1e8;--green:#174f3b;--gold:#d9a441;--line:#dedbd1;--surface:#fff}
+        *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top right,#eadab6 0,transparent 28rem),var(--canvas);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+        .page{width:min(980px,calc(100% - 32px));margin:auto;padding:28px 0 70px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:54px}.brand{font-weight:900;letter-spacing:.1em;text-transform:uppercase}.nav{display:flex;gap:22px}.nav a{color:var(--green);font-weight:800;text-decoration:none}
+        .eyebrow{color:var(--green);font-size:.78rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase}h1{font:500 clamp(3rem,8vw,5.8rem)/.95 Georgia,serif;letter-spacing:-.05em;margin:10px 0 18px}.intro{color:var(--muted);line-height:1.7;margin-bottom:38px}
+        .layout{display:grid;grid-template-columns:1.2fr .8fr;gap:24px}.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:26px}.card h2{font:500 1.9rem Georgia,serif;margin:0 0 20px}.item{display:grid;grid-template-columns:1fr auto;gap:8px;padding:15px 0;border-top:1px solid var(--line)}.item small{color:var(--muted)}
+        .summary{background:var(--green);color:#fff}.row{display:flex;justify-content:space-between;gap:20px;padding:12px 0}.row.muted{color:#c4d8ce}.row.discount{color:#f0c15b}.row.total{font-size:1.22rem;font-weight:900;border-top:1px solid #ffffff35;margin-top:8px;padding-top:20px}
+        .perks{margin-top:24px}.perk{padding:14px 0;border-top:1px solid #ffffff35}.perk strong{display:block}.perk small{color:#c4d8ce}.none{color:#c4d8ce}
+        .actions{display:flex;gap:12px;margin-top:26px}.button{display:inline-block;padding:12px 20px;border-radius:999px;background:var(--green);color:#fff;font-weight:900;text-decoration:none}.button.secondary{background:#fff;color:var(--green);border:1px solid var(--line)}
+        @media(max-width:760px){.layout{grid-template-columns:1fr}.top{align-items:flex-start}.nav{flex-direction:column;gap:8px;align-items:flex-end}}
+    </style>
+</head>
+<body>
+<main class="page">
+    <header class="top">
+        <div class="brand">FirstClub</div>
+        <nav class="nav"><a th:href="@{/shop}">Shop</a><a th:href="@{/memberships}">Membership options</a></nav>
+    </header>
+
+    <div class="eyebrow">Order confirmed</div>
+    <h1>Everything adds up nicely.</h1>
+    <p class="intro">Your cart is now empty. Here is the complete price calculation and the membership perks used for this order.</p>
+
+    <div class="layout">
+        <section class="card">
+            <h2>Order details</h2>
+            <div class="item" th:each="item : ${order.items}">
+                <div>
+                    <strong th:text="${item.name}">Product</strong><br>
+                    <small th:text="${item.quantity + ' × ₹' + item.unitPrice}">1 × ₹100</small>
+                </div>
+                <strong th:text="${'₹' + item.lineTotal}">₹100</strong>
+            </div>
+            <p th:if="${order.items.isEmpty()}">No product line details are available for this order.</p>
+            <div class="actions">
+                <a class="button" th:href="@{/shop}">Continue shopping</a>
+                <a class="button secondary" th:href="@{/home}">Membership home</a>
+            </div>
+        </section>
+
+        <aside class="card summary">
+            <h2>Price calculation</h2>
+            <div class="row"><span>Items subtotal</span><strong th:text="${'₹' + order.totalAmount}">₹0</strong></div>
+            <div class="row discount" th:if="${order.discountAmount.signum() > 0}">
+                <span th:text="${'Best discount (' + order.discountPercent + '%)'}">Best discount</span>
+                <strong th:text="${'- ₹' + order.discountAmount}">- ₹0</strong>
+            </div>
+            <div class="row muted"><span>Delivery</span><strong th:text="${order.freeDelivery ? 'FREE' : '₹' + order.deliveryFee}">₹50</strong></div>
+            <div class="row total"><span>Final price</span><strong th:text="${'₹' + order.finalAmount}">₹0</strong></div>
+
+            <div class="perks">
+                <div class="eyebrow" style="color:#f0c15b">Perks used</div>
+                <div class="perk" th:if="${order.appliedDiscountPerkCode != null}">
+                    <strong th:text="${order.appliedDiscountPerkName}">Discount perk</strong>
+                    <small th:text="${order.appliedDiscountPerkCode + ' · saved ₹' + order.discountAmount}">Saved ₹0</small>
+                </div>
+                <div class="perk" th:if="${order.freeDelivery}">
+                    <strong>Free delivery</strong>
+                    <small>FREE_DELIVERY · saved ₹50.00</small>
+                </div>
+                <p class="none" th:if="${order.appliedDiscountPerkCode == null and !order.freeDelivery}">No membership perks applied.</p>
+            </div>
+        </aside>
+    </div>
+</main>
+</body>
+</html>
