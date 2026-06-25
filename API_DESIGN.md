@@ -206,13 +206,6 @@ Public endpoint using a valid refresh token. Rotates the refresh token.
 
 Authenticated. Revokes the supplied refresh token.
 
-### `GET /api/v1/users/me`
-
-Authenticated. Returns profile and role.
-
-### `PATCH /api/v1/users/me`
-
-Authenticated. Updates allowed profile fields.
 
 ## 5. Public catalogue APIs
 
@@ -241,21 +234,6 @@ Returns one tier and its perks.
 
 ## 6. User subscription APIs
 
-### `POST /api/v1/subscriptions/preview`
-
-Authenticated. Calculates the final price, duration, start date, expiry date, and change
-effect before payment.
-
-Request:
-
-```json
-{
-  "planId": "uuid",
-  "tierId": "uuid",
-  "couponCode": "OPTIONAL"
-}
-```
-
 ### `POST /api/v1/subscriptions`
 
 Authenticated. Creates a subscription. Requires `Idempotency-Key`.
@@ -273,37 +251,23 @@ Request:
 
 Response: `201 Created` with the active subscription and receipt summary.
 
-### `GET /api/v1/subscriptions/current`
+### `GET /api/v1/subscriptions/users/{userId}/current`
 
 Authenticated. Returns the current membership, plan, tier, expiry, renewal status, and perks.
 If none exists, return `404` with code `NO_ACTIVE_SUBSCRIPTION`.
 
-### `GET /api/v1/subscriptions/history`
+### `GET /api/v1/subscriptions/users/{userId}/history`
 
 Authenticated and paginated. Returns past subscriptions and changes.
 
-### `POST /api/v1/subscriptions/current/change-preview`
-
-Authenticated. Shows price/effective-date consequences before an upgrade or downgrade.
-
-Request:
-
-```json
-{
-  "newPlanId": "uuid",
-  "newTierId": "uuid"
-}
-```
-
-### `POST /api/v1/subscriptions/current/change`
-
+### 'POST /api/v1/subscriptions/{subscriptionId}/upgrade'
+### 'POST /api/v1/subscriptions/{subscriptionId}/downgrade'
 Authenticated. Requires `Idempotency-Key`.
 
 Suggested policy:
 
 - Upgrade: immediate; charge the configured difference/proration.
 - Downgrade: effective at the next renewal date.
-- Plan duration change: effective at the next renewal date unless explicitly configured.
 
 Request:
 
@@ -314,37 +278,20 @@ Request:
   "paymentMethodToken": "mock-token"
 }
 ```
-
-### `POST /api/v1/subscriptions/current/cancel`
-
-Authenticated.
-
-Request:
-
-```json
-{ "reason": "Not using it enough" }
-```
+### 'POST /api/v1/subscriptions/{subscriptionId}/cancel'
 
 Cancellation is scheduled for period end, benefits remain active until `expiresAt`, and no
 refund is issued. Calling it repeatedly should be idempotent.
 
-### `POST /api/v1/subscriptions/current/reactivate`
+### 'POST /api/v1/subscriptions/{subscriptionId}/reactivate'
 
 Authenticated. Reverses a scheduled cancellation before the subscription expires.
 
-### `PATCH /api/v1/subscriptions/current/renewal`
 
-Authenticated.
-
-Request:
-
-```json
-{ "autoRenew": false }
-```
 
 ## 7. Membership and checkout integration APIs
 
-### `GET /api/v1/memberships/me`
+### `GET /api/v1/memberships`
 
 Returns a home-screen-friendly aggregate:
 
@@ -355,25 +302,15 @@ Returns a home-screen-friendly aggregate:
 - upgrade availability
 - scheduled subscription changes
 
-### `POST /api/v1/benefits/evaluate`
+### `POST /api/v1/users/{userId}/discount/evaluatee`
 
-Authenticated or service-to-service. Evaluates benefits for a cart without changing data.
+Authenticated or service-to-service. It evaluates the best discount perk for an order amount.
 
 Request:
 
 ```json
 {
-  "cartId": "cart-123",
-  "items": [
-    {
-      "productId": "p1",
-      "categoryId": "grocery",
-      "quantity": 2,
-      "unitPrice": 250
-    }
-  ],
-  "deliveryFee": 40,
-  "currency": "INR"
+  "orderAmount": 1200.00
 }
 ```
 
@@ -389,41 +326,103 @@ Response:
 }
 ```
 
-### `POST /api/v1/internal/orders`
-
-Service-to-service endpoint/event adapter. Records a completed order for tier evaluation.
-Requires an order ID as an idempotency key.
-
-Request:
-
+## 8. Order APIs
+ 
+Base path: `/api/v1/orders`
+ 
+---
+ 
+### `POST /api/v1/orders`
+ 
+Creates a completed order and applies current membership benefits.
+ 
+**Authentication:** Required  
+**Authorization:** User can create only their own order, admin can create for any user.
+ 
+**Request:**
+ 
 ```json
 {
-  "orderId": "order-123",
   "userId": "uuid",
-  "total": 2500,
-  "currency": "INR",
-  "completedAt": "2026-06-21T12:00:00Z"
+  "subtotal": 1200.00,
+  "category": "GROCERY"
 }
 ```
+ 
+**Response:** `201 Created`
+ 
+```json
+{
+  "id": "uuid",
+  "userId": "uuid",
+  "userEmail": "partha@gmail.com",
+  "subtotal": 1200.00,
+  "discountAmount": 120.00,
+  "deliveryFee": 0.00,
+  "total": 1080.00,
+  "appliedTierCode": "GOLD",
+  "appliedPerkCode": "DISCOUNT_10",
+  "createdAt": "2026-06-21T14:18:40Z"
+}
+```
+ 
+---
+ 
+### `GET /api/v1/orders/{orderId}`
+ 
+Fetches one order by order ID.
+ 
+**Authentication:** Required  
+**Authorization:** User can access their own order, admin can access any order.
+ 
+**Response:** `200 OK`
+ 
+```json
+{
+  "id": "uuid",
+  "userId": "uuid",
+  "userEmail": "partha@gmail.com",
+  "subtotal": 1200.00,
+  "discountAmount": 120.00,
+  "deliveryFee": 0.00,
+  "total": 1080.00,
+  "appliedTierCode": "GOLD",
+  "appliedPerkCode": "DISCOUNT_10",
+  "createdAt": "2026-06-21T14:18:40Z"
+}
+```
+ 
+---
+ 
+### `GET /api/v1/orders/users/{userId}`
+ 
+Returns all completed orders for a user.
+ 
+**Authentication:** Required  
+**Authorization:** User can access only their own order history, admin can access any user's history.
+ 
+**Response:** `200 OK`
+ 
+```json
+[
+  {
+    "id": "uuid",
+    "userId": "uuid",
+    "userEmail": "partha@gmail.com",
+    "subtotal": 1200.00,
+    "discountAmount": 120.00,
+    "deliveryFee": 0.00,
+    "total": 1080.00,
+    "appliedTierCode": "GOLD",
+    "appliedPerkCode": "DISCOUNT_10",
+    "createdAt": "2026-06-21T14:18:40Z"
+  }
+]
+```
 
-### `POST /api/v1/internal/users/{userId}/tier-evaluation`
-
-Admin/service endpoint to manually trigger rule evaluation. A scheduled job can run the same
-service for all eligible users.
-
-## 8. Admin APIs
+## 9. Admin APIs
 
 All admin APIs require `ROLE_ADMIN`.
-
-### Plans
-
-- `POST /api/v1/admin/plans`
-- `GET /api/v1/admin/plans`
-- `GET /api/v1/admin/plans/{id}`
-- `PUT /api/v1/admin/plans/{id}`
-- `PATCH /api/v1/admin/plans/{id}/status`
-
-Do not hard-delete plans referenced by subscriptions; deactivate them.
 
 ### Tiers
 
@@ -445,24 +444,13 @@ Do not hard-delete plans referenced by subscriptions; deactivate them.
 
 The assignment endpoint accepts validity dates and tier-specific configuration overrides.
 
-### Tier rules
-
-- `POST /api/v1/admin/tier-rules`
-- `GET /api/v1/admin/tier-rules`
-- `GET /api/v1/admin/tier-rules/{id}`
-- `PUT /api/v1/admin/tier-rules/{id}`
-- `PATCH /api/v1/admin/tier-rules/{id}/status`
-- `DELETE /api/v1/admin/tier-rules/{id}` (only when unused; otherwise deactivate)
-
 ### Subscription operations and reporting
 
 - `GET /api/v1/admin/subscriptions`
 - `GET /api/v1/admin/subscriptions/{id}`
 - `GET /api/v1/admin/users/{userId}/membership`
-- `POST /api/v1/admin/users/{userId}/tier-evaluation`
-- `POST /api/v1/admin/subscriptions/{id}/expire` (support/testing operation)
 
-## 9. Standard errors
+## 10. Standard errors
 
 Important error codes:
 
@@ -479,7 +467,7 @@ Important error codes:
 - `PAYMENT_FAILED` — `422`
 - `IDEMPOTENCY_KEY_REUSED` — `422`
 
-## 10. Spring Boot dependencies
+## 11. Spring Boot dependencies
 
 Select these from Spring Initializr:
 
@@ -522,7 +510,7 @@ JWT can be implemented with Spring Security's `JwtEncoder` and `JwtDecoder`; a s
 library is not required. Passwords should use `BCryptPasswordEncoder` or
 `DelegatingPasswordEncoder`.
 
-## 11. Suggested package structure
+## 12. Suggested package structure
 
 ```text
 com.firstclub.membership
@@ -546,7 +534,7 @@ com.firstclub.membership
 Each feature package should contain its controller, service, repository, entities, and DTOs.
 Avoid one global `controller/service/repository` package split.
 
-## 12. Important implementation decisions
+## 13. Important implementation decisions
 
 - Use PostgreSQL `jsonb` for flexible perk configuration.
 - Use `BigDecimal`, never `double`, for money.
@@ -562,7 +550,7 @@ Avoid one global `controller/service/repository` package split.
 - Keep controllers thin; put lifecycle rules in a transactional domain service.
 - Seed an admin user and sample plans/tiers/perks only in the `dev` profile.
 
-## 13. Suggested delivery order
+## 14. Suggested delivery order
 
 1. Project setup, database migrations, error model, and OpenAPI.
 2. Signup/login/refresh/logout and role security.
